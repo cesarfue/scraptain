@@ -1,11 +1,10 @@
 use crate::error::Result;
 use crate::models::{Job, JobSearchParams};
-use crate::scrapers::{indeed::IndeedScraper, linkedin::LinkedInScraper, JobScraper};
+use crate::scrapers::{indeed::IndeedScraper, linkedin::LinkedInScraper, PlatformScraper};
 use reqwest::Client;
 use std::time::Duration;
 
 pub struct ScraperClient {
-    http_client: Client,
     linkedin_scraper: LinkedInScraper,
     indeed_scraper: IndeedScraper,
 }
@@ -14,12 +13,11 @@ impl ScraperClient {
     pub fn new() -> Self {
         let http_client = Client::builder()
             .timeout(Duration::from_secs(30))
-            .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
+            .user_agent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
             .build()
             .expect("Failed to build HTTP client");
 
         Self {
-            http_client: http_client.clone(),
             linkedin_scraper: LinkedInScraper::new(http_client.clone()),
             indeed_scraper: IndeedScraper::new(http_client),
         }
@@ -27,7 +25,6 @@ impl ScraperClient {
 
     pub fn with_client(http_client: Client) -> Self {
         Self {
-            http_client: http_client.clone(),
             linkedin_scraper: LinkedInScraper::new(http_client.clone()),
             indeed_scraper: IndeedScraper::new(http_client),
         }
