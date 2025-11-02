@@ -1,10 +1,14 @@
-use super::constants as linkedin;
+use super::constants::{
+    BASE_URL, DEFAULT_DELAY, DELAY_VARIANCE, SEARCH_ENDPOINT, SELECTORS, URL_PARAMS,
+};
 use crate::{
     error::{Result, ScraperError},
-    models::{Job, JobSearchParams, JobSource, Selectors},
+    models::{
+        DatePosted, ExperienceLevel, Job, JobSearchParams, JobSource, JobType, Selectors,
+        UrlParameters,
+    },
     scrapers::PlatformScraper,
 };
-use async_trait::async_trait;
 use chrono::NaiveDate;
 use rand::Rng;
 use reqwest::Client;
@@ -17,7 +21,6 @@ pub struct LinkedInScraper {
     band_delay: u64,
 }
 
-#[derive(Debug)]
 struct JobCardData {
     job_id: String,
     title: String,
@@ -31,63 +34,33 @@ impl LinkedInScraper {
     pub fn new(client: Client) -> Self {
         Self {
             client,
-            delay: 3,
-            band_delay: 4,
+            delay: DEFAULT_DELAY,
+            band_delay: DELAY_VARIANCE,
         }
     }
 
-    fn build_search_url(&self, params: &JobSearchParams, start: u32) -> Result<String> {
-        let base_url = format!("{}{}", linkedin::BASE_URL, linkedin::SEARCH_ENDPOINT);
-        let mut url = url::Url::parse(&base_url)?;
-
-        {
-            let mut query_pairs = url.query_pairs_mut();
-            query_pairs.append_pair("keywords", &params.query);
-
-            if let Some(location) = &params.location {
-                query_pairs.append_pair("location", location);
-            }
-
-            if let Some(radius) = params.radius {
-                query_pairs.append_pair("distance", &radius.to_string());
-            }
-
-            if let Some(ref job_type) = params.job_type {
-                if let Some(code) = linkedin::job_type_code(job_type) {
-                    query_pairs.append_pair("f_JT", code);
-                }
-            }
-
-            if let Some(ref experience_level) = params.experience_level {
-                if let Some(code) = linkedin::experience_level_code(experience_level) {
-                    query_pairs.append_pair("f_E", code);
-                }
-            }
-
-            query_pairs.append_pair("pageNum", "0");
-            query_pairs.append_pair("start", &start.to_string());
-
-            if let Some(ref date_posted) = params.date_posted {
-                if let Some(seconds) = linkedin::date_posted_seconds(date_posted) {
-                    query_pairs.append_pair("f_TPR", &format!("r{}", seconds));
-                }
-            }
-        }
-
-        Ok(url.to_string())
+    async fn random_delay(&self) {
+        let delay = rand::thread_rng().gen_range(self.delay..=(self.delay + self.band_delay));
+        tokio::time::sleep(Duration::from_secs(delay)).await;
     }
 
     fn extract_job_card_data(&self, element: ElementRef) -> Option<JobCardData> {
-        let link_selector = LinkedInScraper::parse_selector("a.base-card__full-link").ok()?;
+        let link_selector = self.parse_selector("a.base-card__full-link").ok()?;
         let link_element = element.select(&link_selector).next()?;
-        let href = LinkedInScraper::extract_attr(&link_element, "href")?;
-        let job_id = href.split('-').last()?.split('?').next()?.to_string();
+        let href = self.extract_attr(&link_element, "href")?;
 
-        let title_selector = LinkedInScraper::parse_selector("span.sr-only").ok()?;
+        let job_id = href
+            .split("/jobs/view/")
+            .nth(1)?
+            .split('?')
+            .next()?
+            .to_string();
+
+        let title_selector = self.parse_selector(SELECTORS.title).ok()?;
         let title = element
             .select(&title_selector)
             .next()
-            .map(|e| LinkedInScraper::extract_text(e))
+            .map(|e| self.extract_text(e))
             .unwrap_or_else(|| "N/A".to_string());
 
         let company = self.extract_company(element)?;
@@ -110,7 +83,7 @@ impl LinkedInScraper {
         card_data: JobCardData,
         fetch_description: bool,
     ) -> Job {
-        let job_url = format!("{}/jobs/view/{}", linkedin::BASE_URL, card_data.job_id);
+        let job_url = format!("{}/jobs/view/{}", BASE_URL, card_data.job_id);
 
         let (description, job_type, experience_level) = if fetch_description {
             self.fetch_job_details(&card_data.job_id)
@@ -136,55 +109,50 @@ impl LinkedInScraper {
     }
 
     fn extract_company(&self, element: ElementRef) -> Option<String> {
-        let company_selector =
-            LinkedInScraper::parse_selector("h4.base-search-card__subtitle").ok()?;
+        let company_selector = self.parse_selector(SELECTORS.company).ok()?;
         let company_element = element.select(&company_selector).next()?;
-        let company_link_selector = LinkedInScraper::parse_selector("a").ok()?;
+        let company_link_selector = self.parse_selector("a").ok()?;
 
         Some(
             company_element
                 .select(&company_link_selector)
                 .next()
-                .map(|e| LinkedInScraper::extract_text(e))
-                .unwrap_or_else(|| "N/A".to_string()),
+                .map(|e| self.extract_text(e))
+                .unwrap_or_else(|| self.extract_text(company_element)),
         )
     }
 
     fn extract_location(&self, element: ElementRef) -> Option<String> {
-        let location_selector =
-            LinkedInScraper::parse_selector("span.job-search-card__location").ok()?;
+        let location_selector = self.parse_selector(SELECTORS.location).ok()?;
         element
             .select(&location_selector)
             .next()
-            .map(|e| LinkedInScraper::extract_text(e))
+            .map(|e| self.extract_text(e))
     }
 
     fn extract_salary(&self, element: ElementRef) -> Option<String> {
-        let salary_selector =
-            LinkedInScraper::parse_selector("span.job-search-card__salary-info").ok()?;
+        let salary_selector = self.parse_selector(SELECTORS.salary).ok()?;
         element
             .select(&salary_selector)
             .next()
-            .map(|e| LinkedInScraper::extract_text(e))
+            .map(|e| self.extract_text(e))
     }
 
     fn extract_posted_date(&self, element: ElementRef) -> Option<String> {
-        let date_selector =
-            LinkedInScraper::parse_selector("time.job-search-card__listdate").ok()?;
+        let date_selector = self.parse_selector(SELECTORS.posted_date).ok()?;
         element
             .select(&date_selector)
             .next()
-            .and_then(|e| LinkedInScraper::extract_attr(&e, "datetime"))
+            .and_then(|e| self.extract_attr(&e, "datetime"))
             .and_then(|date_str| NaiveDate::parse_from_str(date_str, "%Y-%m-%d").ok())
-            .map(|date_str| date_str.to_string())
+            .map(|date| date.to_string())
     }
 
     async fn fetch_job_details(
         &self,
         job_id: &str,
     ) -> Option<(Option<String>, Option<String>, Option<String>)> {
-        let job_url = format!("{}/jobs/view/{}", linkedin::BASE_URL, job_id);
-
+        let job_url = format!("{}/jobs/view/{}", BASE_URL, job_id);
         let response = self.client.get(&job_url).send().await.ok()?;
 
         if !response.status().is_success() {
@@ -193,7 +161,7 @@ impl LinkedInScraper {
 
         let html = response.text().await.ok()?;
 
-        if html.contains("linkedin.com/signup") {
+        if html.contains("linkedin.com/signup") || html.contains("authwall") {
             return None;
         }
 
@@ -206,8 +174,7 @@ impl LinkedInScraper {
     }
 
     fn parse_description(&self, document: &Html) -> Option<String> {
-        let desc_selector =
-            LinkedInScraper::parse_selector("div[class*='show-more-less-html__markup']").ok()?;
+        let desc_selector = self.parse_selector(SELECTORS.description).ok()?;
         document
             .select(&desc_selector)
             .next()
@@ -223,9 +190,12 @@ impl LinkedInScraper {
     }
 
     fn parse_job_criteria(&self, document: &Html, criteria_name: &str) -> Option<String> {
-        let h3_selector = LinkedInScraper::parse_selector("h3").ok()?;
-        let span_selector =
-            LinkedInScraper::parse_selector("span.description__job-criteria-text").ok()?;
+        let h3_selector = self
+            .parse_selector("h3.description__job-criteria-subheader")
+            .ok()?;
+        let span_selector = self
+            .parse_selector("span.description__job-criteria-text")
+            .ok()?;
 
         for h3 in document.select(&h3_selector) {
             let text = h3.text().collect::<String>();
@@ -233,7 +203,7 @@ impl LinkedInScraper {
                 if let Some(parent_node) = h3.parent() {
                     if let Some(parent_elem) = ElementRef::wrap(parent_node) {
                         for span_elem in parent_elem.select(&span_selector) {
-                            return Some(LinkedInScraper::extract_text(span_elem));
+                            return Some(self.extract_text(span_elem));
                         }
                     }
                 }
@@ -241,25 +211,16 @@ impl LinkedInScraper {
         }
         None
     }
-
-    async fn random_delay(&self) {
-        let delay = {
-            let mut rng = rand::thread_rng();
-            rng.gen_range(self.delay..=(self.delay + self.band_delay))
-        };
-
-        tokio::time::sleep(Duration::from_secs(delay)).await;
-    }
 }
 
-#[async_trait]
+#[async_trait::async_trait(?Send)]
 impl PlatformScraper for LinkedInScraper {
     async fn search(&self, params: JobSearchParams) -> Result<Vec<Job>> {
         let mut all_jobs = Vec::new();
         let results_wanted = params.limit.unwrap_or(25);
         let mut start = params.offset.unwrap_or(0) as u32;
         let max_start = 1000u32;
-        let fetch_description = true;
+        let fetch_description = false;
         let mut request_count = 0;
 
         while all_jobs.len() < results_wanted && start < max_start {
@@ -271,6 +232,8 @@ impl PlatformScraper for LinkedInScraper {
             );
 
             let url = self.build_search_url(&params, start)?;
+            println!("Fetching: {}", url);
+
             let response = self.client.get(&url).send().await?;
 
             if !response.status().is_success() {
@@ -281,27 +244,26 @@ impl PlatformScraper for LinkedInScraper {
                     response.error_for_status().unwrap_err(),
                 ));
             }
-
             let html = response.text().await?;
+            if html.contains("authwall") || html.len() < 500 {
+                return Err(ScraperError::BlockedByTarget);
+            }
+            let document = Html::parse_document(&html);
+            let job_card_selector = self.parse_selector(SELECTORS.job_card)?;
 
-            let (card_data_list, jobs_count) = {
-                let document = Html::parse_document(&html);
-                let job_card_selector = LinkedInScraper::parse_selector("div.base-search-card")?;
-
-                let mut card_data_list = Vec::new();
-                for element in document.select(&job_card_selector) {
-                    if let Some(card_data) = self.extract_job_card_data(element) {
-                        card_data_list.push(card_data);
-                    }
+            let mut card_data_list = Vec::new();
+            for element in document.select(&job_card_selector) {
+                if let Some(card_data) = self.extract_job_card_data(element) {
+                    card_data_list.push(card_data);
                 }
-
-                let jobs_count = card_data_list.len();
-                (card_data_list, jobs_count)
-            };
+            }
 
             if card_data_list.is_empty() {
+                println!("No jobs found on this page, stopping...");
                 break;
             }
+
+            println!("Found {} jobs on this page", card_data_list.len());
 
             for card_data in card_data_list {
                 if all_jobs.len() >= results_wanted {
@@ -317,12 +279,16 @@ impl PlatformScraper for LinkedInScraper {
             if all_jobs.len() >= results_wanted {
                 break;
             }
-
             self.random_delay().await;
-            start += jobs_count as u32;
+            start += 25;
         }
 
         all_jobs.truncate(results_wanted);
+
+        if all_jobs.is_empty() {
+            return Err(ScraperError::NoJobsFound);
+        }
+
         Ok(all_jobs)
     }
 
@@ -330,28 +296,75 @@ impl PlatformScraper for LinkedInScraper {
         "LinkedIn"
     }
 
-    fn selectors() -> &'static Selectors {
-        &linkedin::SELECTORS
+    fn selectors(&self) -> &'static Selectors {
+        &SELECTORS
+    }
+
+    fn base_url(&self) -> &'static str {
+        BASE_URL
+    }
+
+    fn url_params(&self) -> &'static UrlParameters {
+        &URL_PARAMS
+    }
+
+    fn search_endpoint(&self) -> &'static str {
+        SEARCH_ENDPOINT
+    }
+
+    fn job_type_code(&self, job_type: &JobType) -> Option<&'static str> {
+        match job_type {
+            JobType::FullTime => Some("F"),
+            JobType::PartTime => Some("P"),
+            JobType::Contract => Some("C"),
+            JobType::Temporary => Some("T"),
+            JobType::Internship => Some("I"),
+            JobType::Volunteer => Some("V"),
+        }
+    }
+
+    fn experience_level_code(&self, level: &ExperienceLevel) -> Option<&'static str> {
+        match level {
+            ExperienceLevel::Internship => Some("1"),
+            ExperienceLevel::EntryLevel => Some("2"),
+            ExperienceLevel::Associate => Some("3"),
+            ExperienceLevel::MidSenior => Some("4"),
+            ExperienceLevel::Director => Some("5"),
+            ExperienceLevel::Executive => Some("6"),
+        }
+    }
+
+    fn date_posted_value(&self, date: &DatePosted) -> Option<String> {
+        match date {
+            DatePosted::PastDay => Some("r86400".to_string()),
+            DatePosted::PastWeek => Some("r604800".to_string()),
+            DatePosted::PastMonth => Some("r2592000".to_string()),
+            DatePosted::Any => None,
+        }
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::{DatePosted, ExperienceLevel, JobType};
 
     #[tokio::test]
     async fn test_linkedin_scraper() {
-        let client = Client::new();
+        let client = Client::builder()
+            .timeout(Duration::from_secs(30))
+            .user_agent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36")
+            .build()
+            .expect("Failed to build HTTP client");
+
         let scraper = LinkedInScraper::new(client);
 
         let params = JobSearchParams {
             query: "rust developer".to_string(),
             location: Some("San Francisco".to_string()),
-            limit: Some(10),
+            limit: Some(5),
             job_type: Some(JobType::FullTime),
             experience_level: Some(ExperienceLevel::MidSenior),
-            date_posted: Some(DatePosted::PastWeek),
+            date_posted: Some(DatePosted::PastMonth),
             ..Default::default()
         };
 
@@ -360,8 +373,9 @@ mod tests {
             Ok(jobs) => {
                 println!("Found {} jobs", jobs.len());
                 for job in jobs.iter() {
-                    println!("Job: {} at {}", job.title, job.company);
+                    println!("Job: {} at {} - {}", job.title, job.company, job.url);
                 }
+                assert!(!jobs.is_empty(), "Expected to find at least one job");
             }
             Err(e) => {
                 println!("Error: {:?}", e);

@@ -1,12 +1,12 @@
 use crate::error::Result;
 use crate::models::{Job, JobSearchParams};
-use crate::scrapers::{indeed::IndeedScraper, linkedin::LinkedInScraper, PlatformScraper};
+use crate::scrapers::{hellowork::HelloWorkScraper, linkedin::LinkedInScraper, PlatformScraper};
+use futures::future::join_all;
 use reqwest::Client;
 use std::time::Duration;
 
 pub struct ScraperClient {
-    linkedin_scraper: LinkedInScraper,
-    indeed_scraper: IndeedScraper,
+    scrapers: Vec<Box<dyn PlatformScraper + Send + Sync>>,
 }
 
 impl ScraperClient {
@@ -17,34 +17,30 @@ impl ScraperClient {
             .build()
             .expect("Failed to build HTTP client");
 
-        Self {
-            linkedin_scraper: LinkedInScraper::new(http_client.clone()),
-            indeed_scraper: IndeedScraper::new(http_client),
-        }
-    }
+        let scrapers: Vec<Box<dyn PlatformScraper + Send + Sync>> = vec![
+            Box::new(LinkedInScraper::new(http_client.clone())),
+            Box::new(HelloWorkScraper::new(http_client.clone())),
+            // Box::new(WTTJScraper::new(http_client.clone())),
+        ];
 
-    pub async fn search_linkedin(&self, params: JobSearchParams) -> Result<Vec<Job>> {
-        self.linkedin_scraper.search(params).await
-    }
-
-    pub async fn search_indeed(&self, params: JobSearchParams) -> Result<Vec<Job>> {
-        self.indeed_scraper.search(params).await
+        Self { scrapers }
     }
 
     pub async fn search_all(&self, params: JobSearchParams) -> Result<Vec<Job>> {
         let mut all_jobs = Vec::new();
 
-        let (linkedin_result, indeed_result) = tokio::join!(
-            self.search_linkedin(params.clone()),
-            self.search_indeed(params)
-        );
+        let tasks = self
+            .scrapers
+            .iter()
+            .map(|scraper| scraper.search(params.clone()))
+            .collect::<Vec<_>>();
 
-        if let Ok(mut jobs) = linkedin_result {
-            all_jobs.append(&mut jobs);
-        }
+        let results = join_all(tasks).await;
 
-        if let Ok(mut jobs) = indeed_result {
-            all_jobs.append(&mut jobs);
+        for result in results {
+            if let Ok(mut jobs) = result {
+                all_jobs.append(&mut jobs);
+            }
         }
 
         Ok(all_jobs)

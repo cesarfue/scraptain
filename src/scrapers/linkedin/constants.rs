@@ -1,4 +1,4 @@
-use crate::models::Selectors;
+use crate::models::{Selectors, UrlParameters};
 
 pub const SELECTORS: Selectors = Selectors {
     job_card: "div.base-search-card",
@@ -10,41 +10,17 @@ pub const SELECTORS: Selectors = Selectors {
     description: "div[class*='show-more-less-html__markup']",
 };
 
+pub const URL_PARAMS: UrlParameters = UrlParameters {
+    query: "keywords",
+    location: "location",
+    radius: "distance",
+    start: "start",
+    job_type: "f_JT",
+    experience_level: "f_E",
+    date_posted: "f_TPR",
+};
+
 pub const BASE_URL: &str = "https://www.linkedin.com";
 pub const SEARCH_ENDPOINT: &str = "/jobs-guest/jobs/api/seeMoreJobPostings/search";
 pub const DEFAULT_DELAY: u64 = 3;
 pub const DELAY_VARIANCE: u64 = 4;
-
-pub fn job_type_code(job_type: &crate::models::JobType) -> Option<&'static str> {
-    use crate::models::JobType::*;
-    match job_type {
-        FullTime => Some("F"),
-        PartTime => Some("P"),
-        Contract => Some("C"),
-        Temporary => Some("T"),
-        Internship => Some("I"),
-        Volunteer => Some("V"),
-    }
-}
-
-pub fn experience_level_code(level: &crate::models::ExperienceLevel) -> Option<&'static str> {
-    use crate::models::ExperienceLevel::*;
-    match level {
-        Internship => Some("1"),
-        EntryLevel => Some("2"),
-        Associate => Some("3"),
-        MidSenior => Some("4"),
-        Director => Some("5"),
-        Executive => Some("6"),
-    }
-}
-
-pub fn date_posted_seconds(date: &crate::models::DatePosted) -> Option<u32> {
-    use crate::models::DatePosted::*;
-    match date {
-        PastDay => Some(86400),
-        PastWeek => Some(604800),
-        PastMonth => Some(2592000),
-        Any => None,
-    }
-}

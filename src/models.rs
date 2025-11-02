@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum JobSource {
     LinkedIn,
-    Indeed,
+    HelloWork,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -85,7 +85,7 @@ impl std::fmt::Display for JobSource {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             JobSource::LinkedIn => write!(f, "LinkedIn"),
-            JobSource::Indeed => write!(f, "Indeed"),
+            JobSource::HelloWork => write!(f, "HelloWork"),
         }
     }
 }
@@ -99,4 +99,15 @@ pub struct Selectors {
     pub salary: &'static str,
     pub posted_date: &'static str,
     pub description: &'static str,
+}
+
+#[derive(Debug, Clone)]
+pub struct UrlParameters {
+    pub query: &'static str,
+    pub location: &'static str,
+    pub radius: &'static str,
+    pub start: &'static str,
+    pub job_type: &'static str,
+    pub experience_level: &'static str,
+    pub date_posted: &'static str,
 }
