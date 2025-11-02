@@ -1,5 +1,6 @@
+use super::constants as indeed;
 use crate::error::{Result, ScraperError};
-use crate::models::{Job, JobSearchParams, JobSource};
+use crate::models::{Job, JobSearchParams, JobSource, Selectors};
 use crate::scrapers::PlatformScraper;
 use async_trait::async_trait;
 use reqwest::Client;
@@ -38,7 +39,6 @@ impl IndeedScraper {
                 query_pairs.append_pair("start", &start.to_string());
             }
 
-            // Date filter
             if let Some(ref date_posted) = params.date_posted {
                 let date_param = match date_posted {
                     crate::models::DatePosted::PastDay => "1",
@@ -262,6 +262,10 @@ impl PlatformScraper for IndeedScraper {
 
     fn name(&self) -> &str {
         "Indeed"
+    }
+
+    fn selectors() -> &'static Selectors {
+        &indeed::SELECTORS
     }
 }
 

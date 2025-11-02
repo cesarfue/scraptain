@@ -1,6 +1,12 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum JobSource {
+    LinkedIn,
+    Indeed,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Job {
     pub job_id: String,
     pub title: String,
@@ -56,7 +62,6 @@ pub enum DatePosted {
 }
 
 impl DatePosted {
-    /// Convert to hours for API calls
     pub fn to_hours(&self) -> Option<u32> {
         match self {
             DatePosted::PastDay => Some(24),
@@ -66,7 +71,6 @@ impl DatePosted {
         }
     }
 
-    /// Convert to seconds for LinkedIn API
     pub fn to_seconds(&self) -> Option<u32> {
         match self {
             DatePosted::PastDay => Some(86400),
@@ -75,12 +79,6 @@ impl DatePosted {
             DatePosted::Any => None,
         }
     }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum JobSource {
-    LinkedIn,
-    Indeed,
 }
 
 impl std::fmt::Display for JobSource {
@@ -92,28 +90,13 @@ impl std::fmt::Display for JobSource {
     }
 }
 
-impl JobType {
-    pub fn linkedin_code(&self) -> Option<&'static str> {
-        match self {
-            JobType::FullTime => Some("F"),
-            JobType::PartTime => Some("P"),
-            JobType::Contract => Some("C"),
-            JobType::Temporary => Some("T"),
-            JobType::Internship => Some("I"),
-            JobType::Volunteer => Some("V"),
-        }
-    }
-}
-
-impl ExperienceLevel {
-    pub fn linkedin_code(&self) -> Option<&'static str> {
-        match self {
-            ExperienceLevel::Internship => Some("1"),
-            ExperienceLevel::EntryLevel => Some("2"),
-            ExperienceLevel::Associate => Some("3"),
-            ExperienceLevel::MidSenior => Some("4"),
-            ExperienceLevel::Director => Some("5"),
-            ExperienceLevel::Executive => Some("6"),
-        }
-    }
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Selectors {
+    pub job_card: &'static str,
+    pub title: &'static str,
+    pub company: &'static str,
+    pub location: &'static str,
+    pub salary: &'static str,
+    pub posted_date: &'static str,
+    pub description: &'static str,
 }

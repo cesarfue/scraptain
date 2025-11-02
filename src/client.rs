@@ -13,17 +13,10 @@ impl ScraperClient {
     pub fn new() -> Self {
         let http_client = Client::builder()
             .timeout(Duration::from_secs(30))
-            .user_agent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+            .user_agent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36")
             .build()
             .expect("Failed to build HTTP client");
 
-        Self {
-            linkedin_scraper: LinkedInScraper::new(http_client.clone()),
-            indeed_scraper: IndeedScraper::new(http_client),
-        }
-    }
-
-    pub fn with_client(http_client: Client) -> Self {
         Self {
             linkedin_scraper: LinkedInScraper::new(http_client.clone()),
             indeed_scraper: IndeedScraper::new(http_client),
@@ -45,12 +38,13 @@ impl ScraperClient {
             self.search_linkedin(params.clone()),
             self.search_indeed(params)
         );
-        if let Ok(mut linkedin_jobs) = linkedin_result {
-            all_jobs.append(&mut linkedin_jobs);
+
+        if let Ok(mut jobs) = linkedin_result {
+            all_jobs.append(&mut jobs);
         }
 
-        if let Ok(mut indeed_jobs) = indeed_result {
-            all_jobs.append(&mut indeed_jobs);
+        if let Ok(mut jobs) = indeed_result {
+            all_jobs.append(&mut jobs);
         }
 
         Ok(all_jobs)

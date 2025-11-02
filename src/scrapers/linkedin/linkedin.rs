@@ -1,6 +1,7 @@
+use super::constants as linkedin;
 use crate::{
     error::{Result, ScraperError},
-    models::{Job, JobSearchParams, JobSource},
+    models::{Job, JobSearchParams, JobSource, Selectors},
     scrapers::PlatformScraper,
 };
 use async_trait::async_trait;
@@ -12,7 +13,6 @@ use std::time::Duration;
 
 pub struct LinkedInScraper {
     client: Client,
-    base_url: String,
     delay: u64,
     band_delay: u64,
 }
@@ -31,17 +31,13 @@ impl LinkedInScraper {
     pub fn new(client: Client) -> Self {
         Self {
             client,
-            base_url: "https://www.linkedin.com".to_string(),
             delay: 3,
             band_delay: 4,
         }
     }
 
     fn build_search_url(&self, params: &JobSearchParams, start: u32) -> Result<String> {
-        let base_url = format!(
-            "{}/jobs-guest/jobs/api/seeMoreJobPostings/search",
-            self.base_url
-        );
+        let base_url = format!("{}{}", linkedin::BASE_URL, linkedin::SEARCH_ENDPOINT);
         let mut url = url::Url::parse(&base_url)?;
 
         {
@@ -57,13 +53,13 @@ impl LinkedInScraper {
             }
 
             if let Some(ref job_type) = params.job_type {
-                if let Some(code) = job_type.linkedin_code() {
+                if let Some(code) = linkedin::job_type_code(job_type) {
                     query_pairs.append_pair("f_JT", code);
                 }
             }
 
             if let Some(ref experience_level) = params.experience_level {
-                if let Some(code) = experience_level.linkedin_code() {
+                if let Some(code) = linkedin::experience_level_code(experience_level) {
                     query_pairs.append_pair("f_E", code);
                 }
             }
@@ -72,7 +68,7 @@ impl LinkedInScraper {
             query_pairs.append_pair("start", &start.to_string());
 
             if let Some(ref date_posted) = params.date_posted {
-                if let Some(seconds) = date_posted.to_seconds() {
+                if let Some(seconds) = linkedin::date_posted_seconds(date_posted) {
                     query_pairs.append_pair("f_TPR", &format!("r{}", seconds));
                 }
             }
@@ -114,7 +110,7 @@ impl LinkedInScraper {
         card_data: JobCardData,
         fetch_description: bool,
     ) -> Job {
-        let job_url = format!("{}/jobs/view/{}", self.base_url, card_data.job_id);
+        let job_url = format!("{}/jobs/view/{}", linkedin::BASE_URL, card_data.job_id);
 
         let (description, job_type, experience_level) = if fetch_description {
             self.fetch_job_details(&card_data.job_id)
@@ -187,7 +183,7 @@ impl LinkedInScraper {
         &self,
         job_id: &str,
     ) -> Option<(Option<String>, Option<String>, Option<String>)> {
-        let job_url = format!("{}/jobs/view/{}", self.base_url, job_id);
+        let job_url = format!("{}/jobs/view/{}", linkedin::BASE_URL, job_id);
 
         let response = self.client.get(&job_url).send().await.ok()?;
 
@@ -332,6 +328,10 @@ impl PlatformScraper for LinkedInScraper {
 
     fn name(&self) -> &str {
         "LinkedIn"
+    }
+
+    fn selectors() -> &'static Selectors {
+        &linkedin::SELECTORS
     }
 }
 
