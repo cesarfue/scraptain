@@ -1,9 +1,9 @@
 use crate::models::{Selectors, UrlParameters};
 
 pub const SELECTORS: Selectors = Selectors {
-    job_card: "div.base-search-card",
-    title: "span.sr-only",
-    company: "h4.base-search-card__subtitle",
+    job_card: "li[data-id-storage-target='item']",
+    title: "h3.tw-inline p:first-of-type",
+    company: "h3.tw-inline p:last-of-type",
     location: "span.job-search-card__location",
     salary: "span.job-search-card__salary-info",
     posted_date: "time.job-search-card__listdate",
@@ -11,8 +11,8 @@ pub const SELECTORS: Selectors = Selectors {
 };
 
 pub const URL_PARAMS: UrlParameters = UrlParameters {
-    query: "keywords",
-    location: "location",
+    query: "k",
+    location: "l",
     radius: "distance",
     start: "start",
     job_type: "f_JT",
@@ -20,7 +20,4 @@ pub const URL_PARAMS: UrlParameters = UrlParameters {
     date_posted: "f_TPR",
 };
 
-pub const BASE_URL: &str = "https://www.linkedin.com";
-pub const SEARCH_ENDPOINT: &str = "/jobs-guest/jobs/api/seeMoreJobPostings/search";
-pub const DEFAULT_DELAY: u64 = 3;
-pub const DELAY_VARIANCE: u64 = 4;
+pub const URL: &str = "https://www.hellowork.com/fr-fr/emploi/recherche.html?";

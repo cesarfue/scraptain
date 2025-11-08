@@ -2,8 +2,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum JobSource {
-    LinkedIn,
-    HelloWork,
+    Hellowork,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -77,15 +76,6 @@ impl DatePosted {
             DatePosted::PastWeek => Some(604800),
             DatePosted::PastMonth => Some(2592000),
             DatePosted::Any => None,
-        }
-    }
-}
-
-impl std::fmt::Display for JobSource {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            JobSource::LinkedIn => write!(f, "LinkedIn"),
-            JobSource::HelloWork => write!(f, "HelloWork"),
         }
     }
 }
