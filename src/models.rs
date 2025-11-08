@@ -2,16 +2,12 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Job {
-    pub job_id: String,
+    pub id: String,
     pub title: String,
     pub company: String,
     pub location: Option<String>,
     pub description: Option<String>,
-    pub salary: Option<String>,
     pub url: String,
-    pub posted_date: Option<String>,
-    pub job_type: Option<String>,
-    pub experience_level: Option<String>,
     pub source: String,
 }
 
@@ -28,12 +24,11 @@ pub struct JobSearchParams {
 }
 
 pub struct Selectors {
-    pub job_card: SelectorRule,
+    pub card: SelectorRule,
+    pub id: SelectorRule,
     pub title: SelectorRule,
     pub company: SelectorRule,
     pub location: SelectorRule,
-    pub salary: SelectorRule,
-    pub posted_date: SelectorRule,
     pub description: SelectorRule,
 }
 
@@ -44,10 +39,20 @@ pub enum SelectorType {
     Html,
 }
 
+pub enum PageType {
+    Board,
+    Job,
+}
+
+pub enum PageQuery<'a> {
+    Board(&'a JobSearchParams),
+    Job(&'a str),
+}
+
 #[derive(Debug)]
 pub struct SelectorRule {
     pub selector: &'static str,
-    pub nth: Option<usize>,
+    pub n: Option<(usize, usize)>,
     pub selector_type: SelectorType,
 }
 

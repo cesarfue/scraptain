@@ -2,48 +2,47 @@ use crate::models::{SelectorRule, SelectorType, Selectors, UrlParameters};
 
 pub struct PlatformConfig {
     pub name: &'static str,
-    pub url: &'static str,
+    pub base_url: &'static str,
+    pub board_path: &'static str,
+    pub job_path: &'static str,
     pub selectors: Selectors,
     pub url_params: UrlParameters,
 }
 
 pub const HELLOWORK: PlatformConfig = PlatformConfig {
     name: "Hellowork",
-    url: "https://www.hellowork.com/fr-fr/emploi/recherche.html",
+    base_url: "https://www.hellowork.com/fr-fr/",
+    board_path: "emploi/recherche.html",
+    job_path: "emplois/{id}.html",
     selectors: Selectors {
-        job_card: SelectorRule {
+        card: SelectorRule {
             selector: "li[data-id-storage-target='item']",
-            nth: None,
+            n: None,
             selector_type: SelectorType::Html,
+        },
+        id: SelectorRule {
+            selector: "li[data-id-storage-target='item']",
+            n: None,
+            selector_type: SelectorType::Attribute("data-id-storage-item-id"),
         },
         title: SelectorRule {
             selector: "h3.tw-inline p:first-of-type",
-            nth: None,
+            n: None,
             selector_type: SelectorType::Text,
         },
         company: SelectorRule {
             selector: "h3.tw-inline p:last-of-type",
-            nth: None,
+            n: None,
             selector_type: SelectorType::Text,
         },
         location: SelectorRule {
-            selector: "span.job-search-card__location",
-            nth: None,
+            selector: "div[data-cy='localisationCard']",
+            n: None,
             selector_type: SelectorType::Text,
-        },
-        salary: SelectorRule {
-            selector: "span.job-search-card__salary-info",
-            nth: None,
-            selector_type: SelectorType::Text,
-        },
-        posted_date: SelectorRule {
-            selector: "time.job-search-card__listdate",
-            nth: None,
-            selector_type: SelectorType::Attribute("datetime"),
         },
         description: SelectorRule {
-            selector: "div[class*='show-more-less-html__markup']",
-            nth: None,
+            selector: "div#offer-panel p",
+            n: Some((0, 3)),
             selector_type: SelectorType::Text,
         },
     },

@@ -13,8 +13,8 @@ pub enum ScraperError {
     #[error("Failed to parse URL: {0}")]
     UrlParseError(#[from] url::ParseError),
 
-    #[error("Invalid search parameters: {0}")]
-    InvalidParameters(String),
+    #[error("Invalid search parameters")]
+    InvalidParameters,
 
     #[error("Rate limit exceeded")]
     RateLimitExceeded,
