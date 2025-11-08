@@ -1,11 +1,6 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum JobSource {
-    Hellowork,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Job {
     pub job_id: String,
     pub title: String,
@@ -17,7 +12,7 @@ pub struct Job {
     pub posted_date: Option<String>,
     pub job_type: Option<String>,
     pub experience_level: Option<String>,
-    pub source: JobSource,
+    pub source: String,
 }
 
 #[derive(Debug, Clone, Default)]
@@ -30,6 +25,41 @@ pub struct JobSearchParams {
     pub limit: Option<usize>,
     pub offset: Option<usize>,
     pub date_posted: Option<DatePosted>,
+}
+
+pub struct Selectors {
+    pub job_card: SelectorRule,
+    pub title: SelectorRule,
+    pub company: SelectorRule,
+    pub location: SelectorRule,
+    pub salary: SelectorRule,
+    pub posted_date: SelectorRule,
+    pub description: SelectorRule,
+}
+
+#[derive(Debug)]
+pub enum SelectorType {
+    Text,
+    Attribute(&'static str),
+    Html,
+}
+
+#[derive(Debug)]
+pub struct SelectorRule {
+    pub selector: &'static str,
+    pub nth: Option<usize>,
+    pub selector_type: SelectorType,
+}
+
+#[derive(Debug, Clone)]
+pub struct UrlParameters {
+    pub query: &'static str,
+    pub location: &'static str,
+    pub radius: &'static str,
+    pub start: &'static str,
+    pub job_type: &'static str,
+    pub experience_level: &'static str,
+    pub date_posted: &'static str,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -78,26 +108,4 @@ impl DatePosted {
             DatePosted::Any => None,
         }
     }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Selectors {
-    pub job_card: &'static str,
-    pub title: &'static str,
-    pub company: &'static str,
-    pub location: &'static str,
-    pub salary: &'static str,
-    pub posted_date: &'static str,
-    pub description: &'static str,
-}
-
-#[derive(Debug, Clone)]
-pub struct UrlParameters {
-    pub query: &'static str,
-    pub location: &'static str,
-    pub radius: &'static str,
-    pub start: &'static str,
-    pub job_type: &'static str,
-    pub experience_level: &'static str,
-    pub date_posted: &'static str,
 }

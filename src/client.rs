@@ -1,12 +1,12 @@
 use crate::error::Result;
 use crate::models::{Job, JobSearchParams};
-use crate::PlatformScraper;
+use crate::platform::PlatformScraper;
 use futures::future::join_all;
 use reqwest::Client;
 use std::time::Duration;
 
 pub struct ScraperClient {
-    scraper: PlatformScraper,
+    scrapers: Vec<PlatformScraper>,
 }
 
 impl ScraperClient {
@@ -17,9 +17,9 @@ impl ScraperClient {
             .build()
             .expect("Failed to build HTTP client");
 
-        let scraper = PlatformScraper::new(http_client);
+        let scrapers = vec![PlatformScraper::hellowork(http_client.clone())];
 
-        Self { scraper }
+        Self { scrapers }
     }
 
     pub async fn search_all(&self, params: JobSearchParams) -> Result<Vec<Job>> {
