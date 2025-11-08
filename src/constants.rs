@@ -1,6 +1,6 @@
-use crate::models::{SelectorRule, SelectorType, Selectors, UrlParameters};
+use crate::models::{Rule, RuleReturns, Selectors, UrlParameters};
 
-pub struct PlatformConfig {
+pub struct BoardConfig {
     pub name: &'static str,
     pub base_url: &'static str,
     pub board_path: &'static str,
@@ -9,41 +9,41 @@ pub struct PlatformConfig {
     pub url_params: UrlParameters,
 }
 
-pub const HELLOWORK: PlatformConfig = PlatformConfig {
+pub const HELLOWORK: BoardConfig = BoardConfig {
     name: "Hellowork",
     base_url: "https://www.hellowork.com/fr-fr/",
     board_path: "emploi/recherche.html",
     job_path: "emplois/{id}.html",
     selectors: Selectors {
-        card: SelectorRule {
+        card: Rule {
             selector: "li[data-id-storage-target='item']",
             n: None,
-            selector_type: SelectorType::Html,
+            returns: RuleReturns::Html,
         },
-        id: SelectorRule {
+        id: Rule {
             selector: "li[data-id-storage-target='item']",
             n: None,
-            selector_type: SelectorType::Attribute("data-id-storage-item-id"),
+            returns: RuleReturns::Attribute("data-id-storage-item-id"),
         },
-        title: SelectorRule {
+        title: Rule {
             selector: "h3.tw-inline p:first-of-type",
             n: None,
-            selector_type: SelectorType::Text,
+            returns: RuleReturns::Text,
         },
-        company: SelectorRule {
+        company: Rule {
             selector: "h3.tw-inline p:last-of-type",
             n: None,
-            selector_type: SelectorType::Text,
+            returns: RuleReturns::Text,
         },
-        location: SelectorRule {
+        location: Rule {
             selector: "div[data-cy='localisationCard']",
             n: None,
-            selector_type: SelectorType::Text,
+            returns: RuleReturns::Text,
         },
-        description: SelectorRule {
+        description: Rule {
             selector: "div#offer-panel p",
             n: Some((0, 3)),
-            selector_type: SelectorType::Text,
+            returns: RuleReturns::Text,
         },
     },
     url_params: UrlParameters {

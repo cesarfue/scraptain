@@ -24,16 +24,16 @@ pub struct JobSearchParams {
 }
 
 pub struct Selectors {
-    pub card: SelectorRule,
-    pub id: SelectorRule,
-    pub title: SelectorRule,
-    pub company: SelectorRule,
-    pub location: SelectorRule,
-    pub description: SelectorRule,
+    pub card: Rule,
+    pub id: Rule,
+    pub title: Rule,
+    pub company: Rule,
+    pub location: Rule,
+    pub description: Rule,
 }
 
 #[derive(Debug)]
-pub enum SelectorType {
+pub enum RuleReturns {
     Text,
     Attribute(&'static str),
     Html,
@@ -50,10 +50,10 @@ pub enum PageQuery<'a> {
 }
 
 #[derive(Debug)]
-pub struct SelectorRule {
+pub struct Rule {
     pub selector: &'static str,
     pub n: Option<(usize, usize)>,
-    pub selector_type: SelectorType,
+    pub returns: RuleReturns,
 }
 
 #[derive(Debug, Clone)]

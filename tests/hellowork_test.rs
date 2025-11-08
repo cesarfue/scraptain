@@ -1,18 +1,18 @@
 use reqwest::Client;
 use scraper::Html;
-use scraptain::{models::SelectorType, JobSearchParams, PlatformScraper};
+use scraptain::{models::RuleReturns, BoardScraper, JobSearchParams};
 
-fn hprint(value: Option<String>, selector_type: &SelectorType) {
+fn hprint(value: Option<String>, selector_type: &RuleReturns) {
     match value {
         Some(content) => match selector_type {
-            SelectorType::Html => {
+            RuleReturns::Html => {
                 let document = Html::parse_fragment(&content);
                 println!("{:#?}", document.root_element());
             }
-            SelectorType::Text => {
+            RuleReturns::Text => {
                 println!("{}", content);
             }
-            SelectorType::Attribute(attr) => {
+            RuleReturns::Attribute(attr) => {
                 println!("{}", content);
             }
         },
@@ -25,7 +25,7 @@ fn hprint(value: Option<String>, selector_type: &SelectorType) {
 #[tokio::test]
 async fn test_hellowork_search() {
     let client = Client::new();
-    let scraper = PlatformScraper::hellowork(client);
+    let scraper = BoardScraper::hellowork(client);
 
     let params = JobSearchParams {
         query: "développeur".to_string(),
@@ -41,8 +41,8 @@ async fn test_hellowork_search() {
             println!("Found {} jobs", jobs.len());
             for job in jobs {
                 println!(
-                    "title: {} | company: {} | location: {:?} | id: {} | url: {:?}\n description: {:?}",
-                    job.title, job.company, job.location, job.id, job.url, job.description
+                    "title: {} | company: {} | location: {:?} | id: {} | url: {:?}",
+                    job.title, job.company, job.location, job.id, job.url
                 );
             }
         }
