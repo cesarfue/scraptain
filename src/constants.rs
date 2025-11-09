@@ -45,14 +45,15 @@ pub const HELLOWORK: BoardConfig = BoardConfig {
             n: Some((0, 3)),
             returns: RuleReturns::Text,
         },
+        date_posted: Rule {
+            selector: "div[class='tw-typo-s tw-text-grey-500 tw-pl-1 tw-pt-1']",
+            n: None,
+            returns: RuleReturns::Text,
+        },
     },
     url_params: UrlParameters {
         query: "k",
         location: "l",
-        radius: "distance",
         offset: "p",
-        job_type: "f_JT",
-        experience_level: "f_E",
-        date_posted: "f_TPR",
     },
 };

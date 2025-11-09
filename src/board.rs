@@ -60,6 +60,9 @@ impl BoardScraper {
         let id = self
             .extract_from_rule(&card_html, &selectors.id)
             .unwrap_or_default();
+        let date_posted = self
+            .extract_from_rule(&card_html, &selectors.date_posted)
+            .unwrap_or_default();
         let url = self.url(PageQuery::Job(&id), None)?;
         let job_html = self.get_html(&url).await?;
         let description = self.extract_from_rule(&job_html, &selectors.description);
@@ -71,6 +74,7 @@ impl BoardScraper {
             location: Some(location),
             description,
             url,
+            date_posted: Some(date_posted),
             source: self.config.name.to_string(),
         }))
     }
@@ -143,14 +147,6 @@ impl BoardScraper {
             query_pairs.append_pair(url_params.query, &params.query);
             if let Some(location) = &params.location {
                 query_pairs.append_pair(url_params.location, location);
-            }
-            if let Some(radius) = params.radius {
-                query_pairs.append_pair(url_params.radius, &radius.to_string());
-            }
-            if let Some(date_posted) = &params.date_posted {
-                if let Some(seconds) = date_posted.to_seconds() {
-                    query_pairs.append_pair(url_params.date_posted, &seconds.to_string());
-                }
             }
             if let Some(offset) = offset {
                 query_pairs.append_pair(url_params.offset, &offset.to_string());
