@@ -30,7 +30,7 @@ async fn test_hellowork_search() {
     let params = JobSearchParams {
         query: "développeur".to_string(),
         location: Some("Lyon".to_string()),
-        limit: Some(5),
+        limit: Some(50),
         ..Default::default()
     };
 

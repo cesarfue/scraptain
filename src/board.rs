@@ -21,24 +21,27 @@ impl BoardScraper {
 
     pub async fn search(&self, params: JobSearchParams) -> Result<Vec<Job>> {
         let mut jobs: Vec<Job> = Vec::new();
-        let mut count = 0;
+        let mut count: usize = 0;
+        let mut offset: usize = 1;
         let limit = params.limit.unwrap_or(100);
-        let board_url = self.url(PageQuery::Board(&params))?;
-        let document = self.get_html(&board_url).await?;
 
-        while count < limit {
+        while count <= limit {
+            let board_url = self.url(PageQuery::Board(&params), Some(offset))?;
+            let document = self.get_html(&board_url).await?;
             let selector = Selector::parse(&self.config.selectors.card.selector).unwrap();
             let job_cards: Vec<_> = document.select(&selector).collect();
+
             for card in job_cards {
-                if count >= limit {
-                    break;
-                }
                 let card_html = Html::parse_fragment(&card.html());
                 if let Some(job) = self.build_job(&card_html).await? {
                     jobs.push(job);
                     count += 1;
+                    if count >= limit {
+                        break;
+                    }
                 }
             }
+            offset += 1;
         }
         Ok(jobs)
     }
@@ -57,7 +60,7 @@ impl BoardScraper {
         let id = self
             .extract_from_rule(&card_html, &selectors.id)
             .unwrap_or_default();
-        let url = self.url(PageQuery::Job(&id))?;
+        let url = self.url(PageQuery::Job(&id), None)?;
         let job_html = self.get_html(&url).await?;
         let description = self.extract_from_rule(&job_html, &selectors.description);
 
@@ -75,16 +78,13 @@ impl BoardScraper {
     fn extract_from_rule(&self, document: &Html, selector_rule: &Rule) -> Option<String> {
         let selector = Selector::parse(selector_rule.selector).ok()?;
         let elements: Vec<_> = document.select(&selector).collect();
-
         if elements.is_empty() {
             return None;
         }
-
         let (start, end) = match selector_rule.n {
             Some((s, e)) => (s, e.min(elements.len())),
             None => (0, 1),
         };
-
         let slice = &elements[start..end];
 
         match &selector_rule.returns {
@@ -109,9 +109,9 @@ impl BoardScraper {
         }
     }
 
-    fn url(&self, query: PageQuery<'_>) -> Result<String> {
+    fn url(&self, query: PageQuery<'_>, offset: Option<usize>) -> Result<String> {
         match query {
-            PageQuery::Board(params) => self.build_board_url(params),
+            PageQuery::Board(params) => self.build_board_url(params, offset),
             PageQuery::Job(job_id) => self.build_job_url(job_id),
         }
     }
@@ -134,7 +134,7 @@ impl BoardScraper {
         Ok(url.to_string())
     }
 
-    fn build_board_url(&self, params: &JobSearchParams) -> Result<String> {
+    fn build_board_url(&self, params: &JobSearchParams, offset: Option<usize>) -> Result<String> {
         let mut url = Url::parse(self.config.base_url)?.join(self.config.board_path)?;
         let url_params = &self.config.url_params;
 
@@ -147,13 +147,13 @@ impl BoardScraper {
             if let Some(radius) = params.radius {
                 query_pairs.append_pair(url_params.radius, &radius.to_string());
             }
-            if let Some(offset) = params.offset {
-                query_pairs.append_pair(url_params.start, &offset.to_string());
-            }
             if let Some(date_posted) = &params.date_posted {
                 if let Some(seconds) = date_posted.to_seconds() {
                     query_pairs.append_pair(url_params.date_posted, &seconds.to_string());
                 }
+            }
+            if let Some(offset) = offset {
+                query_pairs.append_pair(url_params.offset, &offset.to_string());
             }
         }
 

@@ -19,8 +19,8 @@ pub struct JobSearchParams {
     pub job_type: Option<JobType>,
     pub experience_level: Option<ExperienceLevel>,
     pub limit: Option<usize>,
-    pub offset: Option<usize>,
     pub date_posted: Option<DatePosted>,
+    pub offset: Option<usize>,
 }
 
 pub struct Selectors {
@@ -37,11 +37,6 @@ pub enum RuleReturns {
     Text,
     Attribute(&'static str),
     Html,
-}
-
-pub enum PageType {
-    Board,
-    Job,
 }
 
 pub enum PageQuery<'a> {
@@ -61,7 +56,7 @@ pub struct UrlParameters {
     pub query: &'static str,
     pub location: &'static str,
     pub radius: &'static str,
-    pub start: &'static str,
+    pub offset: &'static str,
     pub job_type: &'static str,
     pub experience_level: &'static str,
     pub date_posted: &'static str,

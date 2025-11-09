@@ -50,7 +50,7 @@ pub const HELLOWORK: BoardConfig = BoardConfig {
         query: "k",
         location: "l",
         radius: "distance",
-        start: "start",
+        offset: "p",
         job_type: "f_JT",
         experience_level: "f_E",
         date_posted: "f_TPR",
