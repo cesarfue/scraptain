@@ -69,6 +69,40 @@ fn test_linkedin() {
 }
 
 #[test]
+fn test_wttj() {
+    let result = BoardScraper::new()
+        .expect("Failed to create scraper")
+        .query("développeur")
+        .location("Lyon")
+        .limit(5)
+        .board(Board::WTTJ)
+        .search();
+
+    match result {
+        Ok(jobs) => {
+            println!("Found {} jobs from WTTJ", jobs.len());
+            assert!(!jobs.is_empty(), "Should find at least one job");
+
+            for job in jobs {
+                println!(
+                    "\n{}\n{}\n  Company: {}\n  Location: {}\n  Source: {}\n  URL: {}\n  Date posted: {}\n  Description: {}",
+                    job.id, job.title, job.company, job.location, job.source, job.url, job.date_posted, job.description
+                );
+
+                assert_eq!(job.source, "WelcomeToTheJungle");
+                assert!(!job.id.is_empty());
+                assert!(!job.title.is_empty());
+                assert!(!job.company.is_empty());
+            }
+        }
+        Err(e) => {
+            eprintln!("Error: {}", e);
+            panic!("Test failed: {}", e);
+        }
+    }
+}
+
+#[test]
 fn test_all() {
     let result = BoardScraper::new()
         .expect("Failed to create scraper")
@@ -85,6 +119,7 @@ fn test_all() {
 
             let mut hellowork_count = 0;
             let mut linkedin_count = 0;
+            let mut wttj_count = 0;
 
             for job in jobs {
                 println!(
@@ -95,6 +130,7 @@ fn test_all() {
                 match job.source.as_str() {
                     "Hellowork" => hellowork_count += 1,
                     "Linkedin" => linkedin_count += 1,
+                    "WTTJ" => wttj_count += 1,
                     _ => {}
                 }
 
@@ -104,8 +140,8 @@ fn test_all() {
             }
 
             println!(
-                "\nResults breakdown: {} Hellowork, {} LinkedIn",
-                hellowork_count, linkedin_count
+                "\nResults breakdown: {} Hellowork, {} LinkedIn, {} WTTJ",
+                hellowork_count, linkedin_count, wttj_count
             );
         }
         Err(e) => {

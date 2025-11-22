@@ -13,6 +13,7 @@ pub struct Job {
 pub enum Board {
     Hellowork,
     Linkedin,
+    WTTJ,
     All,
 }
 
