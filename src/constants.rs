@@ -9,7 +9,7 @@ pub struct BoardConfig {
     pub job_path: &'static str,
     pub selectors: Selectors,
     pub url_params: UrlParameters,
-    pub cookie_popup_selector: Option<&'static str>,
+    pub board_page_clicks: Option<&'static [&'static str]>,
 }
 
 pub const HELLOWORK: BoardConfig = BoardConfig {
@@ -66,7 +66,7 @@ pub const HELLOWORK: BoardConfig = BoardConfig {
         location: "l",
         offset: "p",
     },
-    cookie_popup_selector: Some("button#hw-cc-notice-accept-btn"),
+    board_page_clicks: Some(&["button#hw-cc-notice-accept-btn"]),
 };
 
 pub const LINKEDIN: BoardConfig = BoardConfig {
@@ -123,5 +123,62 @@ pub const LINKEDIN: BoardConfig = BoardConfig {
         location: "location",
         offset: "start",
     },
-    cookie_popup_selector: None,
+    board_page_clicks: None,
+};
+
+pub const WTTJ: BoardConfig = BoardConfig {
+    name: "WelcomeToTheJungle",
+    base_url: "https://www.welcometothejungle.com",
+    board_path: "/jobs?",
+    job_path: "{id}",
+    selectors: Selectors {
+        card: Rule {
+            selects: "li[data-testid='search-results-list-item-wrapper']",
+            n: None,
+            returns: RuleReturns::Html,
+            transforms: None,
+        },
+        id: Rule {
+            selects: "a",
+            n: None,
+            returns: RuleReturns::Attribute("href"),
+            transforms: None,
+        },
+        title: Rule {
+            selects: "div[role='mark']",
+            n: None,
+            returns: RuleReturns::Text,
+            transforms: None,
+        },
+        company: Rule {
+            selects: "span.wui-text",
+            n: None,
+            returns: RuleReturns::Text,
+            transforms: None,
+        },
+        location: Rule {
+            selects: "i[name='location'] + span > span",
+            n: None,
+            returns: RuleReturns::Text,
+            transforms: None,
+        },
+        description: Rule {
+            selects: "div#the-position-section",
+            n: None,
+            returns: RuleReturns::Text,
+            transforms: None,
+        },
+        date_posted: Rule {
+            selects: "time",
+            n: None,
+            returns: RuleReturns::Attribute("datetime"),
+            transforms: None,
+        },
+    },
+    url_params: UrlParameters {
+        query: "query",
+        location: "aroundQuery",
+        offset: "page",
+    },
+    board_page_clicks: None,
 };

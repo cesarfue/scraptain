@@ -46,6 +46,7 @@ impl BoardScraper {
         self.config = match self.params.board {
             Board::Hellowork => crate::constants::HELLOWORK.clone(),
             Board::Linkedin => crate::constants::LINKEDIN.clone(),
+            Board::WTTJ => crate::constants::WTTJ.clone(),
             Board::All => crate::constants::HELLOWORK.clone(),
         };
         self
@@ -83,22 +84,16 @@ impl BoardScraper {
             let board_url = self.url(PageQuery::Board(&self.params), Some(offset))?;
             tab.navigate_to(&board_url)
                 .map_err(|e| ScraperError::BrowserError(format!("Navigation failed: {}", e)))?;
-            thread::sleep(Duration::from_secs(2));
+            thread::sleep(Duration::from_secs(1));
+
             if !cookie_handled {
-                if let Some(cookie_selector) = self.config.cookie_popup_selector {
-                    if let Ok(cookie_button) = tab.wait_for_element(cookie_selector) {
-                        if let Err(e) = cookie_button.click() {
-                            eprintln!("Failed to click cookie button: {:?}", e);
-                        } else {
-                            thread::sleep(Duration::from_millis(500));
-                        }
-                    } else {
-                        eprintln!("Failed to found cookie selector");
+                if let Some(click_selectors) = self.config.board_page_clicks {
+                    for click_selector in click_selectors {
+                        self.click(&tab, click_selector)?;
                     }
                 }
                 cookie_handled = true;
             }
-
             let html_content = self.get_html(&tab)?;
             let document = Html::parse_document(&html_content);
             let selector =
@@ -126,6 +121,7 @@ impl BoardScraper {
         let config = match board {
             Board::Hellowork => crate::constants::HELLOWORK.clone(),
             Board::Linkedin => crate::constants::LINKEDIN.clone(),
+            Board::WTTJ => crate::constants::WTTJ.clone(),
             Board::All => panic!("Board::All should not be used here"),
         };
 
@@ -156,7 +152,6 @@ impl BoardScraper {
 
         let job_html_content = self.get_html(tab)?;
         let job_html = Html::parse_document(&job_html_content);
-
         let description = self
             .extract_from_rule(&job_html, &selectors.description)
             .unwrap_or_default();
@@ -179,6 +174,18 @@ impl BoardScraper {
                 .unwrap_or_default(),
             source: self.config.name.to_string(),
         })
+    }
+
+    fn click(&self, tab: &headless_chrome::Tab, button_selector: &'static str) -> Result<()> {
+        if let Ok(button) = tab.wait_for_element(button_selector) {
+            button.click().map_err(|e| {
+                ScraperError::BrowserError(format!("Failed to click button: {:?}", e))
+            })?;
+            thread::sleep(Duration::from_millis(500));
+            Ok(())
+        } else {
+            Ok(())
+        }
     }
 
     fn extract_from_rule(&self, document: &Html, selector_rule: &Rule) -> Option<String> {
