@@ -9,7 +9,7 @@ pub struct Job {
     pub source: String,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug, Copy)]
 pub enum Board {
     Hellowork,
     Linkedin,

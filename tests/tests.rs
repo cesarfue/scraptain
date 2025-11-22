@@ -1,14 +1,14 @@
 use scraptain::{Board, BoardScraper};
 
-#[tokio::test]
-async fn hellowork() {
+#[test]
+fn test_hellowork() {
     let result = BoardScraper::new()
+        .expect("Failed to create scraper")
         .query("développeur")
         .location("Lyon")
         .limit(5)
         .board(Board::Hellowork)
-        .search()
-        .await;
+        .search();
 
     match result {
         Ok(jobs) => {
@@ -17,7 +17,7 @@ async fn hellowork() {
 
             for job in jobs {
                 println!(
-                    "\n{}\n{}\n  Company: {}\n  Location: {}\n  Source: {}\n  URL: {}\n Date posted: {}\n Description: {}",
+                    "\n{}\n{}\n  Company: {}\n  Location: {}\n  Source: {}\n  URL: {}\n  Date posted: {}\n  Description: {}",
                     job.id, job.title, job.company, job.location, job.source, job.url, job.date_posted, job.description
                 );
 
@@ -34,15 +34,15 @@ async fn hellowork() {
     }
 }
 
-#[tokio::test]
-async fn linkedin() {
+#[test]
+fn test_linkedin() {
     let result = BoardScraper::new()
+        .expect("Failed to create scraper")
         .query("développeur")
         .location("Lyon")
         .limit(5)
         .board(Board::Linkedin)
-        .search()
-        .await;
+        .search();
 
     match result {
         Ok(jobs) => {
@@ -51,7 +51,7 @@ async fn linkedin() {
 
             for job in jobs {
                 println!(
-                    "\n{}\n{}\n  Company: {}\n  Location: {}\n  Source: {}\n  URL: {}\n Date posted: {}\n Description: {}",
+                    "\n{}\n{}\n  Company: {}\n  Location: {}\n  Source: {}\n  URL: {}\n  Date posted: {}\n  Description: {}",
                     job.id, job.title, job.company, job.location, job.source, job.url, job.date_posted, job.description
                 );
 
@@ -68,15 +68,15 @@ async fn linkedin() {
     }
 }
 
-#[tokio::test]
-async fn all() {
+#[test]
+fn test_all() {
     let result = BoardScraper::new()
+        .expect("Failed to create scraper")
         .query("développeur")
         .location("Lyon")
         .limit(3)
         .board(Board::All)
-        .search()
-        .await;
+        .search();
 
     match result {
         Ok(jobs) => {

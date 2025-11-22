@@ -4,18 +4,15 @@ pub type Result<T> = std::result::Result<T, ScraperError>;
 
 #[derive(Error, Debug)]
 pub enum ScraperError {
-    #[error("HTTP request failed: {0}")]
-    RequestFailed(#[from] reqwest::Error),
-
     #[error("Failed to parse URL: {0}")]
     UrlParseError(#[from] url::ParseError),
 
-    #[error("Rate limit exceeded")]
-    RateLimitExceeded,
+    #[error("Browser error: {0}")]
+    BrowserError(String),
 
-    #[error("Scraper blocked or captcha detected")]
-    BlockedByTarget,
+    #[error("Element not found")]
+    ElementNotFound,
 
-    #[error("WebDriver error: {0}")]
-    WebDriverError(String),
+    #[error("Extraction failed: {0}")]
+    ExtractionFailed(String),
 }

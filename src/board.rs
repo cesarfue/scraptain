@@ -2,31 +2,28 @@ use crate::constants::BoardConfig;
 use crate::error::{Result, ScraperError};
 use crate::models::Board;
 use crate::models::{Job, JobSearchParams, PageQuery, Rule, RuleReturns};
-use futures::future::join_all;
-use reqwest::Client;
+use headless_chrome::Browser;
 use scraper::{Html, Selector};
+use std::thread;
 use std::time::Duration;
 use url::Url;
 
 pub struct BoardScraper {
-    client: Client,
+    browser: Browser,
     config: BoardConfig,
     params: JobSearchParams,
 }
 
 impl BoardScraper {
-    pub fn new() -> Self {
-        let client = Client::builder()
-            .timeout(Duration::from_secs(30))
-            .user_agent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36")
-            .build()
-            .expect("Failed to build HTTP client");
+    pub fn new() -> Result<Self> {
+        let browser = Browser::default()
+            .map_err(|e| ScraperError::BrowserError(format!("Failed to launch browser: {}", e)))?;
 
-        Self {
-            client,
+        Ok(Self {
+            browser,
             config: crate::constants::HELLOWORK.clone(),
             params: JobSearchParams::default(),
-        }
+        })
     }
 
     pub fn query<S: Into<String>>(mut self, query: S) -> Self {
@@ -54,51 +51,66 @@ impl BoardScraper {
         self
     }
 
-    pub async fn search(self) -> Result<Vec<Job>> {
+    pub fn search(self) -> Result<Vec<Job>> {
         if let Board::All = self.params.board {
-            let mut futures = Vec::new();
-            for board in Board::variants() {
-                let scraper = self.clone_for_board(board);
-                futures.push(scraper.search_board());
-            }
-            let results = join_all(futures).await;
             let mut all_jobs = Vec::new();
-            for result in results {
-                if let Ok(jobs) = result {
-                    all_jobs.extend(jobs);
+            for board in Board::variants() {
+                let scraper = self.create_for_board(board)?;
+                match scraper.search_board() {
+                    Ok(jobs) => all_jobs.extend(jobs),
+                    Err(e) => eprintln!("Error scraping {:?}: {}", board, e),
                 }
             }
             Ok(all_jobs)
         } else {
-            self.search_board().await
+            self.search_board()
         }
     }
 
-    async fn search_board(mut self) -> Result<Vec<Job>> {
+    fn search_board(self) -> Result<Vec<Job>> {
         let mut jobs = Vec::new();
         let mut count: u32 = 0;
         let mut offset: u32 = 1;
         let limit = self.params.limit;
 
+        let tab = self
+            .browser
+            .new_tab()
+            .map_err(|e| ScraperError::BrowserError(format!("Failed to create tab: {}", e)))?;
+
+        let mut cookie_handled = false;
         while count < limit {
             let board_url = self.url(PageQuery::Board(&self.params), Some(offset))?;
-            let document = match self.get_html(&board_url).await {
-                Ok(doc) => doc,
-                Err(e) => {
-                    eprintln!("Failed to fetch URL {}: {:?}", board_url, e);
-                    break;
+            tab.navigate_to(&board_url)
+                .map_err(|e| ScraperError::BrowserError(format!("Navigation failed: {}", e)))?;
+            thread::sleep(Duration::from_secs(2));
+            if !cookie_handled {
+                if let Some(cookie_selector) = self.config.cookie_popup_selector {
+                    if let Ok(cookie_button) = tab.wait_for_element(cookie_selector) {
+                        if let Err(e) = cookie_button.click() {
+                            eprintln!("Failed to click cookie button: {:?}", e);
+                        } else {
+                            thread::sleep(Duration::from_millis(500));
+                        }
+                    } else {
+                        eprintln!("Failed to found cookie selector");
+                    }
                 }
-            };
+                cookie_handled = true;
+            }
+
+            let html_content = self.get_html(&tab)?;
+            let document = Html::parse_document(&html_content);
             let selector =
                 Selector::parse(&self.config.selectors.card.selects).expect("Invalid selector");
             let job_cards: Vec<_> = document.select(&selector).collect();
             if job_cards.is_empty() {
-                eprintln!("No job card found");
+                eprintln!("No job cards found on page {}", offset);
                 break;
             }
             for card in job_cards {
                 let card_html = Html::parse_fragment(&card.html());
-                let job = self.build_job(&card_html).await?;
+                let job = self.build_job(&tab, &card_html)?;
                 jobs.push(job);
                 count += 1;
                 if count >= limit {
@@ -107,36 +119,44 @@ impl BoardScraper {
             }
             offset += 1;
         }
-
         Ok(jobs)
     }
 
-    fn clone_for_board(&self, board: Board) -> Self {
+    fn create_for_board(&self, board: Board) -> Result<Self> {
         let config = match board {
             Board::Hellowork => crate::constants::HELLOWORK.clone(),
             Board::Linkedin => crate::constants::LINKEDIN.clone(),
             Board::All => panic!("Board::All should not be used here"),
         };
 
-        Self {
-            client: self.client.clone(),
+        let browser = Browser::default()
+            .map_err(|e| ScraperError::BrowserError(format!("Failed to launch browser: {}", e)))?;
+
+        Ok(Self {
+            browser,
             config,
             params: JobSearchParams {
                 board,
                 ..self.params.clone()
             },
-        }
+        })
     }
 
-    async fn build_job(&mut self, card_html: &Html) -> Result<Job> {
+    fn build_job(&self, tab: &headless_chrome::Tab, card_html: &Html) -> Result<Job> {
         let selectors = &self.config.selectors;
+
         let id = self
             .extract_from_rule(card_html, &selectors.id)
             .unwrap_or_default();
         let url = self.url(PageQuery::Job(&id), None)?;
-        let job_html = self.get_html(&url).await?;
+        tab.navigate_to(&url)
+            .map_err(|e| ScraperError::BrowserError(format!("Failed to navigate to job: {}", e)))?;
 
-        // println!("{:?}", job_html);
+        thread::sleep(Duration::from_secs(1));
+
+        let job_html_content = self.get_html(tab)?;
+        let job_html = Html::parse_document(&job_html_content);
+
         let description = self
             .extract_from_rule(&job_html, &selectors.description)
             .unwrap_or_default();
@@ -193,26 +213,16 @@ impl BoardScraper {
         Some(values.join("\n\n"))
     }
 
+    fn get_html(&self, tab: &headless_chrome::Tab) -> Result<String> {
+        tab.get_content()
+            .map_err(|e| ScraperError::BrowserError(format!("Failed to get HTML: {}", e)))
+    }
+
     fn url(&self, query: PageQuery<'_>, offset: Option<u32>) -> Result<String> {
         match query {
             PageQuery::Board(params) => self.build_board_url(params, offset),
             PageQuery::Job(job_id) => self.build_job_url(job_id),
         }
-    }
-
-    async fn get_html(&self, url: &str) -> Result<Html> {
-        let mut request = self.client.get(url);
-        if let Some(headers) = &self.config.headers {
-            request = request.headers(headers.clone());
-        }
-        let response = request.send().await?;
-        match response.status().as_u16() {
-            429 => return Err(ScraperError::RateLimitExceeded),
-            403 => return Err(ScraperError::BlockedByTarget),
-            _ => {}
-        }
-        let html_text = response.text().await?;
-        Ok(Html::parse_document(&html_text))
     }
 
     fn build_job_url(&self, job_id: &str) -> Result<String> {
