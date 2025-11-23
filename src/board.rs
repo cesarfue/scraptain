@@ -2,10 +2,12 @@ use crate::constants::BoardConfig;
 use crate::error::{Result, ScraperError};
 use crate::models::Board;
 use crate::models::{Job, JobSearchParams, PageQuery, Rule, RuleReturns};
+use crate::transforms::parse_date;
+use chrono::Utc;
 use headless_chrome::Browser;
 use scraper::{Html, Selector};
-use std::thread;
 use std::time::Duration;
+use tokio::time::sleep;
 use url::Url;
 
 pub struct BoardScraper {
@@ -52,23 +54,23 @@ impl BoardScraper {
         self
     }
 
-    pub fn search(self) -> Result<Vec<Job>> {
+    pub async fn search(self) -> Result<Vec<Job>> {
         if let Board::All = self.params.board {
             let mut all_jobs = Vec::new();
             for board in Board::variants() {
                 let scraper = self.create_for_board(board)?;
-                match scraper.search_board() {
+                match scraper.search_board().await {
                     Ok(jobs) => all_jobs.extend(jobs),
                     Err(e) => eprintln!("Error scraping {:?}: {}", board, e),
                 }
             }
             Ok(all_jobs)
         } else {
-            self.search_board()
+            self.search_board().await
         }
     }
 
-    fn search_board(self) -> Result<Vec<Job>> {
+    async fn search_board(self) -> Result<Vec<Job>> {
         let mut jobs = Vec::new();
         let mut count: u32 = 0;
         let mut offset: u32 = 1;
@@ -84,12 +86,12 @@ impl BoardScraper {
             let board_url = self.url(PageQuery::Board(&self.params), Some(offset))?;
             tab.navigate_to(&board_url)
                 .map_err(|e| ScraperError::BrowserError(format!("Navigation failed: {}", e)))?;
-            thread::sleep(Duration::from_secs(1));
+            sleep(Duration::from_secs(2)).await;
 
             if !cookie_handled {
                 if let Some(click_selectors) = self.config.board_page_clicks {
                     for click_selector in click_selectors {
-                        self.click(&tab, click_selector)?;
+                        self.click(&tab, click_selector).await?;
                     }
                 }
                 cookie_handled = true;
@@ -105,7 +107,7 @@ impl BoardScraper {
             }
             for card in job_cards {
                 let card_html = Html::parse_fragment(&card.html());
-                let job = self.build_job(&tab, &card_html)?;
+                let job = self.build_job(&tab, &card_html).await?;
                 jobs.push(job);
                 count += 1;
                 if count >= limit {
@@ -138,7 +140,7 @@ impl BoardScraper {
         })
     }
 
-    fn build_job(&self, tab: &headless_chrome::Tab, card_html: &Html) -> Result<Job> {
+    async fn build_job(&self, tab: &headless_chrome::Tab, card_html: &Html) -> Result<Job> {
         let selectors = &self.config.selectors;
 
         let id = self
@@ -148,7 +150,7 @@ impl BoardScraper {
         tab.navigate_to(&url)
             .map_err(|e| ScraperError::BrowserError(format!("Failed to navigate to job: {}", e)))?;
 
-        thread::sleep(Duration::from_secs(1));
+        sleep(Duration::from_secs(1)).await;
 
         let job_html_content = self.get_html(tab)?;
         let job_html = Html::parse_document(&job_html_content);
@@ -171,17 +173,18 @@ impl BoardScraper {
             url,
             date_posted: self
                 .extract_from_rule(card_html, &selectors.date_posted)
-                .unwrap_or_default(),
+                .map(|d| parse_date(&d))
+                .unwrap_or_else(|| Utc::now().date_naive()),
             source: self.config.name.to_string(),
         })
     }
 
-    fn click(&self, tab: &headless_chrome::Tab, button_selector: &'static str) -> Result<()> {
+    async fn click(&self, tab: &headless_chrome::Tab, button_selector: &'static str) -> Result<()> {
         if let Ok(button) = tab.wait_for_element(button_selector) {
             button.click().map_err(|e| {
                 ScraperError::BrowserError(format!("Failed to click button: {:?}", e))
             })?;
-            thread::sleep(Duration::from_millis(500));
+            sleep(Duration::from_millis(500)).await;
             Ok(())
         } else {
             Ok(())

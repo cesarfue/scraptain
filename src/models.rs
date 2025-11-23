@@ -1,10 +1,12 @@
+use chrono::NaiveDate;
+
 pub struct Job {
     pub id: String,
     pub title: String,
     pub company: String,
     pub location: String,
     pub description: String,
-    pub date_posted: String,
+    pub date_posted: NaiveDate,
     pub url: String,
     pub source: String,
 }

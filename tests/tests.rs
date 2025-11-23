@@ -1,14 +1,15 @@
 use scraptain::{Board, BoardScraper};
 
-#[test]
-fn test_hellowork() {
+#[tokio::test]
+async fn test_hellowork() {
     let result = BoardScraper::new()
         .expect("Failed to create scraper")
         .query("développeur")
         .location("Lyon")
         .limit(5)
         .board(Board::Hellowork)
-        .search();
+        .search()
+        .await;
 
     match result {
         Ok(jobs) => {
@@ -17,7 +18,7 @@ fn test_hellowork() {
 
             for job in jobs {
                 println!(
-                    "\n{}\n{}\n  Company: {}\n  Location: {}\n  Source: {}\n  URL: {}\n  Date posted: {}\n  Description: {}",
+                    "\n{}\n{}\n  Company: {}\n  Location: {}\n  Source: {}\n  URL: {}\n  Date posted: {:?}\n  Description: {}",
                     job.id, job.title, job.company, job.location, job.source, job.url, job.date_posted, job.description
                 );
 
@@ -34,15 +35,16 @@ fn test_hellowork() {
     }
 }
 
-#[test]
-fn test_linkedin() {
+#[tokio::test]
+async fn test_linkedin() {
     let result = BoardScraper::new()
         .expect("Failed to create scraper")
         .query("développeur")
         .location("Lyon")
         .limit(5)
         .board(Board::Linkedin)
-        .search();
+        .search()
+        .await;
 
     match result {
         Ok(jobs) => {
@@ -51,7 +53,7 @@ fn test_linkedin() {
 
             for job in jobs {
                 println!(
-                    "\n{}\n{}\n  Company: {}\n  Location: {}\n  Source: {}\n  URL: {}\n  Date posted: {}\n  Description: {}",
+                    "\n{}\n{}\n  Company: {}\n  Location: {}\n  Source: {}\n  URL: {}\n  Date posted: {:?}\n  Description: {}",
                     job.id, job.title, job.company, job.location, job.source, job.url, job.date_posted, job.description
                 );
 
@@ -68,15 +70,16 @@ fn test_linkedin() {
     }
 }
 
-#[test]
-fn test_wttj() {
+#[tokio::test]
+async fn test_wttj() {
     let result = BoardScraper::new()
         .expect("Failed to create scraper")
         .query("développeur")
         .location("Lyon")
         .limit(5)
         .board(Board::WTTJ)
-        .search();
+        .search()
+        .await;
 
     match result {
         Ok(jobs) => {
@@ -85,7 +88,7 @@ fn test_wttj() {
 
             for job in jobs {
                 println!(
-                    "\n{}\n{}\n  Company: {}\n  Location: {}\n  Source: {}\n  URL: {}\n  Date posted: {}\n  Description: {}",
+                    "\n{}\n{}\n  Company: {}\n  Location: {}\n  Source: {}\n  URL: {}\n  Date posted: {:?}\n  Description: {}",
                     job.id, job.title, job.company, job.location, job.source, job.url, job.date_posted, job.description
                 );
 
@@ -102,15 +105,16 @@ fn test_wttj() {
     }
 }
 
-#[test]
-fn test_all() {
+#[tokio::test]
+async fn test_all() {
     let result = BoardScraper::new()
         .expect("Failed to create scraper")
         .query("développeur")
         .location("Lyon")
         .limit(3)
         .board(Board::All)
-        .search();
+        .search()
+        .await;
 
     match result {
         Ok(jobs) => {
