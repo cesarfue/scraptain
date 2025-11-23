@@ -1,5 +1,9 @@
-use crate::models::{Rule, RuleReturns, Selectors, UrlParameters};
 use crate::transforms::{hellowork_date, linkedin_id};
+use crate::Result;
+use crate::{
+    actions::{hellowork_board_action, wttj_board_action},
+    models::{Rule, RuleReturns, Selectors, UrlParameters},
+};
 
 #[derive(Clone)]
 pub struct BoardConfig {
@@ -9,7 +13,7 @@ pub struct BoardConfig {
     pub job_path: &'static str,
     pub selectors: Selectors,
     pub url_params: UrlParameters,
-    pub board_page_clicks: Option<&'static [&'static str]>,
+    pub board_page_action: Option<fn(&headless_chrome::Tab) -> Result<()>>,
 }
 
 pub const HELLOWORK: BoardConfig = BoardConfig {
@@ -66,7 +70,7 @@ pub const HELLOWORK: BoardConfig = BoardConfig {
         location: "l",
         offset: "p",
     },
-    board_page_clicks: Some(&["button#hw-cc-notice-accept-btn"]),
+    board_page_action: Some(hellowork_board_action),
 };
 
 pub const LINKEDIN: BoardConfig = BoardConfig {
@@ -123,7 +127,7 @@ pub const LINKEDIN: BoardConfig = BoardConfig {
         location: "location",
         offset: "start",
     },
-    board_page_clicks: None,
+    board_page_action: None,
 };
 
 pub const WTTJ: BoardConfig = BoardConfig {
@@ -180,5 +184,5 @@ pub const WTTJ: BoardConfig = BoardConfig {
         location: "aroundQuery",
         offset: "page",
     },
-    board_page_clicks: None,
+    board_page_action: Some(wttj_board_action),
 };

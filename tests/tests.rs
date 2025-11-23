@@ -5,7 +5,7 @@ async fn test_hellowork() {
     let result = BoardScraper::new()
         .expect("Failed to create scraper")
         .query("développeur")
-        .location("Lyon")
+        .location("Lyon, France")
         .limit(5)
         .board(Board::Hellowork)
         .search()
@@ -18,8 +18,8 @@ async fn test_hellowork() {
 
             for job in jobs {
                 println!(
-                    "\n{}\n{}\n  Company: {}\n  Location: {}\n  Source: {}\n  URL: {}\n  Date posted: {:?}\n  Description: {}",
-                    job.id, job.title, job.company, job.location, job.source, job.url, job.date_posted, job.description
+                    "\n{}\n  Company: {}\n  Location: {}\n  Source: {}\n  URL: {}\n  Date posted: {:?}\n  Description: {}",
+                    job.title, job.company, job.location, job.source, job.url, job.date_posted, job.description
                 );
 
                 assert_eq!(job.source, "Hellowork");
@@ -40,7 +40,7 @@ async fn test_linkedin() {
     let result = BoardScraper::new()
         .expect("Failed to create scraper")
         .query("développeur")
-        .location("Lyon")
+        .location("Lyon, France")
         .limit(5)
         .board(Board::Linkedin)
         .search()
@@ -53,8 +53,8 @@ async fn test_linkedin() {
 
             for job in jobs {
                 println!(
-                    "\n{}\n{}\n  Company: {}\n  Location: {}\n  Source: {}\n  URL: {}\n  Date posted: {:?}\n  Description: {}",
-                    job.id, job.title, job.company, job.location, job.source, job.url, job.date_posted, job.description
+                    "\n{}\n  Company: {}\n  Location: {}\n  Source: {}\n  URL: {}\n  Date posted: {:?}\n  Description: {}",
+                    job.title, job.company, job.location, job.source, job.url, job.date_posted, job.description
                 );
 
                 assert_eq!(job.source, "Linkedin");
@@ -75,7 +75,7 @@ async fn test_wttj() {
     let result = BoardScraper::new()
         .expect("Failed to create scraper")
         .query("développeur")
-        .location("Lyon")
+        .location("Lyon, France")
         .limit(5)
         .board(Board::WTTJ)
         .search()
@@ -88,8 +88,8 @@ async fn test_wttj() {
 
             for job in jobs {
                 println!(
-                    "\n{}\n{}\n  Company: {}\n  Location: {}\n  Source: {}\n  URL: {}\n  Date posted: {:?}\n  Description: {}",
-                    job.id, job.title, job.company, job.location, job.source, job.url, job.date_posted, job.description
+                    "\n{}\n  Company: {}\n  Location: {}\n  Source: {}\n  URL: {}\n  Date posted: {:?}\n  Description: {}",
+                    job.title, job.company, job.location, job.source, job.url, job.date_posted, job.description
                 );
 
                 assert_eq!(job.source, "WelcomeToTheJungle");
@@ -110,7 +110,7 @@ async fn test_all() {
     let result = BoardScraper::new()
         .expect("Failed to create scraper")
         .query("développeur")
-        .location("Lyon")
+        .location("Lyon, France")
         .limit(3)
         .board(Board::All)
         .search()
@@ -127,7 +127,7 @@ async fn test_all() {
 
             for job in jobs {
                 println!(
-                    "\n{}\n  Company: {}\n  Location: {}\n  Source: {}\n  URL: {}",
+                    "{}\n  Company: {}\n  Location: {}\n  Source: {}\n  URL: {}",
                     job.title, job.company, job.location, job.source, job.url
                 );
 
