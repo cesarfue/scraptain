@@ -1,4 +1,5 @@
 use chrono::NaiveDate;
+use serde::{Deserialize, Serialize};
 
 pub struct Job {
     pub id: String,
@@ -11,7 +12,7 @@ pub struct Job {
     pub source: String,
 }
 
-#[derive(Clone, Debug, Copy)]
+#[derive(Clone, Debug, Copy, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub enum Board {
     Hellowork,
     Linkedin,
@@ -19,9 +20,35 @@ pub enum Board {
     All,
 }
 
+const BOARD_MAP: &[(Board, &str)] = &[
+    (Board::Hellowork, "Hellowork"),
+    (Board::Linkedin, "Linkedin"),
+    (Board::WTTJ, "WelcomeToTheJungle"),
+    (Board::All, "All"),
+];
+
 impl Board {
+    pub fn as_str(&self) -> &'static str {
+        BOARD_MAP
+            .iter()
+            .find(|(b, _)| b == self)
+            .map(|(_, s)| *s)
+            .unwrap()
+    }
+
+    pub fn from_str(s: &str) -> Option<Self> {
+        BOARD_MAP
+            .iter()
+            .find(|(_, name)| *name == s)
+            .map(|(b, _)| *b)
+    }
+
     pub fn variants() -> Vec<Board> {
-        vec![Board::Hellowork, Board::Linkedin]
+        BOARD_MAP
+            .iter()
+            .filter(|(b, _)| *b != Board::All)
+            .map(|(b, _)| *b)
+            .collect()
     }
 }
 

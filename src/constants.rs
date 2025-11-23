@@ -129,7 +129,7 @@ pub const LINKEDIN: BoardConfig = BoardConfig {
 pub const WTTJ: BoardConfig = BoardConfig {
     name: "WelcomeToTheJungle",
     base_url: "https://www.welcometothejungle.com",
-    board_path: "/jobs?",
+    board_path: "/fr/jobs?",
     job_path: "{id}",
     selectors: Selectors {
         card: Rule {
