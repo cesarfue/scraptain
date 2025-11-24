@@ -156,11 +156,13 @@ impl BoardScraper {
             .extract_from_rule(&job_html, &selectors.description)
             .unwrap_or_default();
 
+        let title = self
+            .extract_from_rule(card_html, &selectors.title)
+            .unwrap_or_default()
+            .replace('\n', " ");
         Ok(Job {
             id,
-            title: self
-                .extract_from_rule(card_html, &selectors.title)
-                .unwrap_or_default(),
+            title,
             company: self
                 .extract_from_rule(card_html, &selectors.company)
                 .unwrap_or_default(),
@@ -193,7 +195,7 @@ impl BoardScraper {
         let mut values: Vec<String> = match &selector_rule.returns {
             RuleReturns::Text => slice
                 .iter()
-                .map(|el| el.text().collect::<Vec<_>>().join(" ").trim().to_string())
+                .map(|el| el.text().collect::<Vec<_>>().join("\n").trim().to_string())
                 .collect(),
             RuleReturns::Attribute(attr) => slice
                 .iter()

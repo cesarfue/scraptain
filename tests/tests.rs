@@ -134,7 +134,7 @@ async fn test_all() {
                 match job.source.as_str() {
                     "Hellowork" => hellowork_count += 1,
                     "Linkedin" => linkedin_count += 1,
-                    "WTTJ" => wttj_count += 1,
+                    "WelcomeToTheJungle" => wttj_count += 1,
                     _ => {}
                 }
 
