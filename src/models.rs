@@ -58,6 +58,8 @@ pub struct JobSearchParams {
     pub board: Board,
     pub location: String,
     pub limit: u32,
+    pub offset: u32,
+    pub single_page: bool,
 }
 
 impl Default for JobSearchParams {
@@ -67,6 +69,8 @@ impl Default for JobSearchParams {
             board: Board::All,
             location: String::new(),
             limit: 50,
+            offset: 1,
+            single_page: false,
         }
     }
 }

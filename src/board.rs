@@ -43,6 +43,16 @@ impl BoardScraper {
         self
     }
 
+    pub fn offset(mut self, offset: u32) -> Self {
+        self.params.offset = offset;
+        self
+    }
+
+    pub fn single_page(mut self, single_page: bool) -> Self {
+        self.params.single_page = single_page;
+        self
+    }
+
     pub fn board(mut self, board: Board) -> Self {
         self.params.board = board.clone();
         self.config = match self.params.board {
@@ -56,14 +66,26 @@ impl BoardScraper {
 
     pub async fn search(self) -> Result<Vec<Job>> {
         if let Board::All = self.params.board {
-            let mut all_jobs = Vec::new();
+            let mut futures = Vec::new();
+
+            // Create scrapers for all boards and collect futures
             for board in Board::variants() {
                 let scraper = self.create_for_board(board)?;
-                match scraper.search_board().await {
+                futures.push(scraper.search_board());
+            }
+
+            // Run all board scrapers concurrently
+            let results = futures::future::join_all(futures).await;
+
+            // Collect all jobs from successful results
+            let mut all_jobs = Vec::new();
+            for result in results {
+                match result {
                     Ok(jobs) => all_jobs.extend(jobs),
-                    Err(e) => eprintln!("Error scraping {:?}: {}", board, e),
+                    Err(e) => eprintln!("Error scraping board: {}", e),
                 }
             }
+
             Ok(all_jobs)
         } else {
             self.search_board().await
@@ -73,8 +95,9 @@ impl BoardScraper {
     async fn search_board(self) -> Result<Vec<Job>> {
         let mut jobs = Vec::new();
         let mut count: u32 = 0;
-        let mut offset: u32 = 1;
+        let mut offset: u32 = self.params.offset;
         let limit = self.params.limit;
+        let single_page = self.params.single_page;
 
         let tab = self
             .browser
@@ -112,6 +135,12 @@ impl BoardScraper {
                     break;
                 }
             }
+
+            // If single_page mode, stop after one page regardless of limit
+            if single_page {
+                break;
+            }
+
             offset += 1;
         }
         Ok(jobs)

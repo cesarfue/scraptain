@@ -5,26 +5,26 @@ pub fn hellowork_date(text: &str) -> String {
     let today = Utc::now().date_naive();
 
     let date = if text.contains("semaine") || text.contains("week") {
-        let n = text
-            .split_whitespace()
-            .next()
-            .unwrap_or("1")
-            .parse::<i64>()
-            .unwrap_or(1);
+        let n = extract_number(&text);
         today - Duration::weeks(n)
     } else if text.contains("jour") || text.contains("day") {
-        let n = text
-            .split_whitespace()
-            .next()
-            .unwrap_or("1")
-            .parse::<i64>()
-            .unwrap_or(1);
+        let n = extract_number(&text);
         today - Duration::days(n)
+    } else if text.contains("mois") || text.contains("month") {
+        let n = extract_number(&text);
+        today - Duration::days(n * 30)
     } else {
         today
     };
 
     date.to_string()
+}
+
+fn extract_number(text: &str) -> i64 {
+    // Find the first number in the text
+    text.split_whitespace()
+        .find_map(|word| word.parse::<i64>().ok())
+        .unwrap_or(1)
 }
 
 pub fn linkedin_id(text: &str) -> String {

@@ -18,8 +18,8 @@ async fn test_hellowork() {
 
             for job in jobs {
                 println!(
-                    "\n{}\n  Company: {}\n  Location: {}\n  Source: {}\n  URL: {}\n  Date posted: {:?}\n  Description: {}",
-                    job.title, job.company, job.location, job.source, job.url, job.date_posted, job.description
+                    "\n{}\n  Company: {}\n  Location: {}\n  Source: {}\n  URL: {}\n  Date posted: {:?}\n",
+                    job.title, job.company, job.location, job.source, job.url, job.date_posted
                 );
 
                 assert_eq!(job.source, "Hellowork");
@@ -41,7 +41,7 @@ async fn test_linkedin() {
         .expect("Failed to create scraper")
         .query("développeur")
         .location("Lyon, France")
-        .limit(5)
+        .limit(20)
         .board(Board::Linkedin)
         .search()
         .await;
@@ -53,8 +53,8 @@ async fn test_linkedin() {
 
             for job in jobs {
                 println!(
-                    "\n{}\n  Company: {}\n  Location: {}\n  Source: {}\n  URL: {}\n  Date posted: {:?}\n  Description: {}",
-                    job.title, job.company, job.location, job.source, job.url, job.date_posted, job.description
+                    "\n{}\n  Company: {}\n  Location: {}\n  Source: {}\n  URL: {}\n  Date posted: {:?}\n",
+                    job.title, job.company, job.location, job.source, job.url, job.date_posted
                 );
 
                 assert_eq!(job.source, "Linkedin");
@@ -88,8 +88,8 @@ async fn test_wttj() {
 
             for job in jobs {
                 println!(
-                    "\n{}\n  Company: {}\n  Location: {}\n  Source: {}\n  URL: {}\n  Date posted: {:?}\n  Description: {}",
-                    job.title, job.company, job.location, job.source, job.url, job.date_posted, job.description
+                    "\n{}\n  Company: {}\n  Location: {}\n  Source: {}\n  URL: {}\n  Date posted: {:?}\n",
+                    job.title, job.company, job.location, job.source, job.url, job.date_posted
                 );
 
                 assert_eq!(job.source, "WelcomeToTheJungle");
