@@ -127,8 +127,8 @@ async fn test_all() {
 
             for job in jobs {
                 println!(
-                    "{}\n  Company: {}\n  Location: {}\n  Source: {}\n  URL: {}",
-                    job.title, job.company, job.location, job.source, job.url
+                    "{}\n  Company: {}\n  Location: {}\n  Source: {}\n  URL: {}\nDate posted: {}",
+                    job.title, job.company, job.location, job.source, job.url, job.date_posted
                 );
 
                 match job.source.as_str() {

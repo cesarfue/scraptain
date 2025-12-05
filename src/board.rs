@@ -156,19 +156,19 @@ impl BoardScraper {
             .extract_from_rule(&job_html, &selectors.description)
             .unwrap_or_default();
 
-        let title = self
-            .extract_from_rule(card_html, &selectors.title)
-            .unwrap_or_default()
-            .replace('\n', " ");
         Ok(Job {
             id,
-            title,
+            title: self
+                .extract_from_rule(card_html, &selectors.title)
+                .unwrap_or_default()
+                .replace('\n', " "),
             company: self
                 .extract_from_rule(card_html, &selectors.company)
                 .unwrap_or_default(),
             location: self
                 .extract_from_rule(card_html, &selectors.location)
-                .unwrap_or_default(),
+                .unwrap_or_default()
+                .replace('\n', " "),
             description,
             url,
             date_posted: self
