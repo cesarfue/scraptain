@@ -67,17 +67,11 @@ impl BoardScraper {
     pub async fn search(self) -> Result<Vec<Job>> {
         if let Board::All = self.params.board {
             let mut futures = Vec::new();
-
-            // Create scrapers for all boards and collect futures
             for board in Board::variants() {
                 let scraper = self.create_for_board(board)?;
                 futures.push(scraper.search_board());
             }
-
-            // Run all board scrapers concurrently
             let results = futures::future::join_all(futures).await;
-
-            // Collect all jobs from successful results
             let mut all_jobs = Vec::new();
             for result in results {
                 match result {
@@ -85,7 +79,6 @@ impl BoardScraper {
                     Err(e) => eprintln!("Error scraping board: {}", e),
                 }
             }
-
             Ok(all_jobs)
         } else {
             self.search_board().await
@@ -123,7 +116,6 @@ impl BoardScraper {
                 Selector::parse(&self.config.selectors.card.selects).expect("Invalid selector");
             let job_cards: Vec<_> = document.select(&selector).collect();
             if job_cards.is_empty() {
-                eprintln!("No job cards found on page {}", offset);
                 break;
             }
             for card in job_cards {
@@ -135,8 +127,6 @@ impl BoardScraper {
                     break;
                 }
             }
-
-            // If single_page mode, stop after one page regardless of limit
             if single_page {
                 break;
             }

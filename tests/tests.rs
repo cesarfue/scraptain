@@ -18,8 +18,8 @@ async fn test_hellowork() {
 
             for job in jobs {
                 println!(
-                    "\n{}\n  Company: {}\n  Location: {}\n  Source: {}\n  URL: {}\n  Date posted: {:?}\n",
-                    job.title, job.company, job.location, job.source, job.url, job.date_posted
+                    "\n{}\n  Company: {}\n  Location: {}\n  Source: {}\n  URL: {}\n  Date posted: {:?}\nDescription: {}",
+                    job.title, job.company, job.location, job.source, job.url, job.date_posted, job.description
                 );
 
                 assert_eq!(job.source, "Hellowork");
@@ -41,7 +41,44 @@ async fn test_linkedin() {
         .expect("Failed to create scraper")
         .query("développeur")
         .location("Lyon, France")
-        .limit(20)
+        .limit(50)
+        .board(Board::Linkedin)
+        .search()
+        .await;
+
+    match result {
+        Ok(jobs) => {
+            println!("Found {} jobs from LinkedIn", jobs.len());
+            assert!(!jobs.is_empty(), "Should find at least one job");
+
+            for job in jobs {
+                println!(
+                    "\n{}\n  Company: {}\n  Location: {}\n  Source: {}\n  URL: {}\n  Date posted: {:?}\n",
+                    job.title, job.company, job.location, job.source, job.url, job.date_posted
+                );
+
+                assert_eq!(job.source, "Linkedin");
+                assert!(!job.id.is_empty());
+                assert!(!job.title.is_empty());
+                assert!(!job.company.is_empty());
+            }
+        }
+        Err(e) => {
+            eprintln!("Error: {}", e);
+            panic!("Test failed: {}", e);
+        }
+    }
+}
+
+#[tokio::test]
+async fn test_linkedin_single() {
+    let result = BoardScraper::new()
+        .expect("Failed to create scraper")
+        .query("développeur")
+        .location("Lyon, France")
+        .limit(50)
+        .offset(1)
+        .single_page(true)
         .board(Board::Linkedin)
         .search()
         .await;

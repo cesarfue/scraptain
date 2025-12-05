@@ -21,7 +21,6 @@ pub fn hellowork_date(text: &str) -> String {
 }
 
 fn extract_number(text: &str) -> i64 {
-    // Find the first number in the text
     text.split_whitespace()
         .find_map(|word| word.parse::<i64>().ok())
         .unwrap_or(1)
